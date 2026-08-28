@@ -746,12 +746,12 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0 0xd420c000 0x0 0x1000>,
-			      <0x0 0xb8000000 0x0 0xd00000>;
+			      <0x0 0xb8000000 0x0 0x1000000>;
 			reg-names = "qspi-base", "qspi-mmap";
-			qspi-sfa1ad = <0xa00000>;
-			qspi-sfa2ad = <0xb00000>;
-			qspi-sfb1ad = <0xc00000>;
-			qspi-sfb2ad = <0xd00000>;
+			qspi-sfa1ad = <0x1000000>;
+			qspi-sfa2ad = <0x2000000>;
+			qspi-sfb1ad = <0x2800000>;
+			qspi-sfb2ad = <0x3000000>;
 			clocks = <&ccu CLK_QSPI>,
 				<&ccu CLK_QSPI_BUS>;
 			clock-names = "qspi_clk", "qspi_bus_clk";
