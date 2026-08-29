@@ -463,5 +463,6 @@ const struct flash_info spi_nor_ids[] = {
 #ifdef CONFIG_SPI_FLASH_FM
 	{ INFO("FM25Q64AI3", 0xa14017, 0, 4 * 1024, 2048, SECT_4K | SPI_NOR_QUAD_READ | SPI_NOR_DUAL_READ) },
 #endif
+	{ INFO("ZB25LQ128C", 0x5e5018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_QUAD_READ | SPI_NOR_DUAL_READ) },
 	{ },
 };
