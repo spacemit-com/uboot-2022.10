@@ -1422,8 +1422,13 @@ uint32_t lpddr4_silicon_init(u32 ddr_base, const char *ddr_type, u32 data_rate)
 
 	if (0 == strcasecmp(ddr_type, "LPDDR4"))
 		io_para_update = io_para_select(LPDDR4);
-	else
+	else {
 		io_para_update = io_para_select(LPDDR4X);
+		if (2133 == data_rate) {
+			// LPDDR4X did NOT support 2133MT yet, set to a lower supported rate
+			data_rate = 1200;
+		}
+	}
 	if (NULL == io_para_update)
 		io_para_update = &ddr_io_para_table[0];
 	if (0 == ddr_tx_odt) {
@@ -1469,9 +1474,12 @@ uint32_t lpddr4_silicon_init(u32 ddr_base, const char *ddr_type, u32 data_rate)
 	ddr_dfc(fp);
 	top_training_fp_all(ddr_base, cs_num, fp, info->para);
 
-	fp=3;
-	ddr_dfc(fp);
-	top_training_fp_all(ddr_base, cs_num, fp, info->para);
+	if (LPDDR4 == io_para_update->devicetype) {
+		// current only LPDDR4 support 2133MT
+		fp=3;
+		ddr_dfc(fp);
+		top_training_fp_all(ddr_base, cs_num, fp, info->para);
+	}
 
 	fp=2;
 	ddr_dfc(fp);
