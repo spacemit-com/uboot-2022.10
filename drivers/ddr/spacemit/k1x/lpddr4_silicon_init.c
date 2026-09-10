@@ -242,7 +242,7 @@ void fp_timing_init(unsigned DDRC_BASE)
 
 	// 2133
 	REG32(DDRC_BASE+MC_CH0_BASE+0x0104)= 0xF0800400;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x0100)= 0x00000E20;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x0100)= 0x00000C18;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x010c)= 0x19194314;
 
 	read_data = REG32(DDRC_BASE+MC_CH0_BASE+0x010c);
@@ -250,8 +250,8 @@ void fp_timing_init(unsigned DDRC_BASE)
 	read_data |= (io_para_update->ca_vref << 24) | (io_para_update->tx_vref << 16) | (io_para_update->rx_soc_odt << 12);
 	REG32(DDRC_BASE+MC_CH0_BASE+0x010c) = read_data;
 
-	REG32(DDRC_BASE+MC_CH0_BASE+0x0110)= 0x20440000;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x0114)= 0x20440000;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x0110)= 0x00440000;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x0114)= 0x00440000;
 
 	read_data = REG32(DDRC_BASE+MC_CH0_BASE+0x0110);
 	read_data &= 0xFF80FFFF;
@@ -263,29 +263,33 @@ void fp_timing_init(unsigned DDRC_BASE)
 	read_data |= (ddr_tx_odt << 20) | (io_para_update->rx_drv << 16);
 	REG32(DDRC_BASE+MC_CH0_BASE+0x0114) = read_data;
 
-	REG32(DDRC_BASE+MC_CH0_BASE+0x018c) = 0x00000030;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x0190) = 0x06400030;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x0194) = 0x80e001c0;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01fc) = 0x000C005E;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x0198) = 0x01CC01CC;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x019c) = 0x00181818;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01a0) = 0x08180C0C;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x018c) = 0x00360020;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x0190) = 0x042a0020;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x0194) = 0x8096012b;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01fc) = 0x000d0065;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x0198) = 0x01330133;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x019c) = 0x00101010;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01a0) = 0x06100808;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x01a4) = 0x00000003;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01a8) = 0x00000217;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01ac) = 0x30651D44;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01b0) = 0x1120080F;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01b4) = 0x08001000;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01b8) = 0x00000C00;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01a8) = 0x0000020f;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01ac) = 0x2044142d;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01b0) = 0x17140814;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01b4) = 0x08000b00;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01b8) = 0x00000800;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x01bc) = 0x02020404;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01c0) = 0x10000004;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01c4) = 0x00000006;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x01d8) = 0x00010190;
-	REG32(DDRC_BASE+MC_CH0_BASE+0x014c) = 0x000c4090;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01c0) = 0x00000004;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01c4) = 0x00000004;
+	//REG32(DDRC_BASE+MC_CH0_BASE+0x01c8) = 0x00000A0A;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x01d8) = 0x00008190;
+	REG32(DDRC_BASE+MC_CH0_BASE+0x014c) = 0x0007204a;
+
 	if (LPDDR4 == io_para_update->devicetype)
 		REG32(DDRC_BASE+MC_CH0_BASE+0x0200) = ((0x1 << 31) | (0x1E << 8) | (0x6 << 0)); // DRAM wdqs timing
 
-	REG32(DDRC_BASE+MC_CH0_PHY_BASE+0x03e4) = 0x15000A02;
-	REG32(DDRC_BASE+MC_CH0_PHY_BASE+0x03ec) = 0x0000046c;
+	REG32(DDRC_BASE+MC_CH0_PHY_BASE+0x03e4) = 0x13000802;
+	REG32(DDRC_BASE+MC_CH0_PHY_BASE+0x03ec) = 0x00000480;
+
+	// 2400
 	REG32(DDRC_BASE+MC_CH0_BASE+0x0104)= 0xA0800400;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x0100)= 0x00000C18;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x010c)= 0x9d194314;
@@ -331,6 +335,8 @@ void fp_timing_init(unsigned DDRC_BASE)
 
 	REG32(DDRC_BASE+MC_CH0_PHY_BASE+0x03e4) = 0x13000802;
 	REG32(DDRC_BASE+MC_CH0_PHY_BASE+0x03ec) = 0x00000450;
+
+	// 1066
 	REG32(DDRC_BASE+MC_CH0_BASE+0x0104)= 0x50800400;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x0100)= 0x0000080e;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x010c)= 0x9d194314;
@@ -376,6 +382,8 @@ void fp_timing_init(unsigned DDRC_BASE)
 
 	REG32(DDRC_BASE+MC_CH0_PHY_BASE+0x03e4) = 0x0a000402;
 	REG32(DDRC_BASE+MC_CH0_PHY_BASE+0x03ec) = 0x00000480;
+
+	// 1200
 	REG32(DDRC_BASE+MC_CH0_BASE+0x0104)= 0x00800400;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x0100)= 0x0000080e;
 	REG32(DDRC_BASE+MC_CH0_BASE+0x010c)= 0x9d194314;
@@ -1414,8 +1422,13 @@ uint32_t lpddr4_silicon_init(u32 ddr_base, const char *ddr_type, u32 data_rate)
 
 	if (0 == strcasecmp(ddr_type, "LPDDR4"))
 		io_para_update = io_para_select(LPDDR4);
-	else
+	else {
 		io_para_update = io_para_select(LPDDR4X);
+		if (2133 == data_rate) {
+			// LPDDR4X did NOT support 2133MT yet, set to a lower supported rate
+			data_rate = 1200;
+		}
+	}
 	if (NULL == io_para_update)
 		io_para_update = &ddr_io_para_table[0];
 	if (0 == ddr_tx_odt) {
@@ -1461,11 +1474,14 @@ uint32_t lpddr4_silicon_init(u32 ddr_base, const char *ddr_type, u32 data_rate)
 	ddr_dfc(fp);
 	top_training_fp_all(ddr_base, cs_num, fp, info->para);
 
-	fp=2;
-	ddr_dfc(fp);
-	top_training_fp_all(ddr_base, cs_num, fp, info->para);
+	if (LPDDR4 == io_para_update->devicetype) {
+		// current only LPDDR4 support 2133MT
+		fp=3;
+		ddr_dfc(fp);
+		top_training_fp_all(ddr_base, cs_num, fp, info->para);
+	}
 
-	fp=3;
+	fp=2;
 	ddr_dfc(fp);
 	top_training_fp_all(ddr_base, cs_num, fp, info->para);
 
