@@ -21,6 +21,7 @@ struct ums {
 			    ulong start, lbaint_t blkcnt, const void *buf);
 	unsigned int start_sector;
 	unsigned int num_sectors;
+	unsigned int sector_size;
 	const char *name;
 	struct blk_desc block_dev;
 };

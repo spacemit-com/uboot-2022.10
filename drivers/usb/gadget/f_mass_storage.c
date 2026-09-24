@@ -719,7 +719,7 @@ static int do_read(struct fsg_common *common)
 		curlun->sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
 		return -EINVAL;
 	}
-	file_offset = ((loff_t) lba) << 9;
+	file_offset = (loff_t)lba * curlun->sector_size;
 
 	/* Carry out the file reads */
 	amount_left = common->data_size_from_cmnd;
@@ -763,13 +763,13 @@ static int do_read(struct fsg_common *common)
 
 		/* Perform the read */
 		rc = ums[common->lun].read_sector(&ums[common->lun],
-				      file_offset / SECTOR_SIZE,
-				      amount / SECTOR_SIZE,
+				      file_offset / curlun->sector_size,
+				      amount / curlun->sector_size,
 				      (char __user *)bh->buf);
 		if (!rc)
 			return -EIO;
 
-		nread = rc * SECTOR_SIZE;
+		nread = rc * curlun->sector_size;
 
 		VLDBG(curlun, "file read %u @ %llu -> %d\n", amount,
 				(unsigned long long) file_offset,
@@ -782,7 +782,7 @@ static int do_read(struct fsg_common *common)
 		} else if (nread < amount) {
 			LDBG(curlun, "partial file read: %d/%u\n",
 					(int) nread, amount);
-			nread -= (nread & 511);	/* Round down to a block */
+			nread -= nread % curlun->sector_size;
 		}
 		file_offset  += nread;
 		amount_left  -= nread;
@@ -856,7 +856,7 @@ static int do_write(struct fsg_common *common)
 
 	/* Carry out the file writes */
 	get_some_more = 1;
-	file_offset = usb_offset = ((loff_t) lba) << 9;
+	file_offset = usb_offset = (loff_t)lba * curlun->sector_size;
 	amount_left_to_req = common->data_size_from_cmnd;
 	amount_left_to_write = common->data_size_from_cmnd;
 
@@ -888,7 +888,7 @@ static int do_write(struct fsg_common *common)
 				curlun->info_valid = 1;
 				continue;
 			}
-			amount -= (amount & 511);
+			amount -= amount % curlun->sector_size;
 			if (amount == 0) {
 
 				/* Why were we were asked to transfer a
@@ -904,7 +904,7 @@ static int do_write(struct fsg_common *common)
 			if (amount_left_to_req == 0)
 				get_some_more = 0;
 
-			/* amount is always divisible by 512, hence by
+			/* amount is always divisible by the sector size, hence by
 			 * the bulk-out maxpacket size */
 			bh->outreq->length = amount;
 			bh->bulk_out_intended_length = amount;
@@ -937,12 +937,12 @@ static int do_write(struct fsg_common *common)
 
 			/* Perform the write */
 			rc = ums[common->lun].write_sector(&ums[common->lun],
-					       file_offset / SECTOR_SIZE,
-					       amount / SECTOR_SIZE,
+					       file_offset / curlun->sector_size,
+					       amount / curlun->sector_size,
 					       (char __user *)bh->buf);
 			if (!rc)
 				return -EIO;
-			nwritten = rc * SECTOR_SIZE;
+			nwritten = rc * curlun->sector_size;
 
 			VLDBG(curlun, "file write %u @ %llu -> %d\n", amount,
 					(unsigned long long) file_offset,
@@ -955,7 +955,7 @@ static int do_write(struct fsg_common *common)
 			} else if (nwritten < amount) {
 				LDBG(curlun, "partial file write: %d/%u\n",
 						(int) nwritten, amount);
-				nwritten -= (nwritten & 511);
+				nwritten -= nwritten % curlun->sector_size;
 				/* Round down to a block */
 			}
 			file_offset += nwritten;
@@ -1029,8 +1029,8 @@ static int do_verify(struct fsg_common *common)
 		return -EIO;		/* No default reply */
 
 	/* Prepare to carry out the file verify */
-	amount_left = verification_length << 9;
-	file_offset = ((loff_t) lba) << 9;
+	amount_left = verification_length * curlun->sector_size;
+	file_offset = (loff_t)lba * curlun->sector_size;
 
 	/* Write out all the dirty buffers before invalidating them */
 
@@ -1053,12 +1053,12 @@ static int do_verify(struct fsg_common *common)
 
 		/* Perform the read */
 		rc = ums[common->lun].read_sector(&ums[common->lun],
-				      file_offset / SECTOR_SIZE,
-				      amount / SECTOR_SIZE,
+				      file_offset / curlun->sector_size,
+				      amount / curlun->sector_size,
 				      (char __user *)bh->buf);
 		if (!rc)
 			return -EIO;
-		nread = rc * SECTOR_SIZE;
+		nread = rc * curlun->sector_size;
 
 		VLDBG(curlun, "file read %u @ %llu -> %d\n", amount,
 				(unsigned long long) file_offset,
@@ -1070,7 +1070,7 @@ static int do_verify(struct fsg_common *common)
 		} else if (nread < amount) {
 			LDBG(curlun, "partial file verify: %d/%u\n",
 					(int) nread, amount);
-			nread -= (nread & 511);	/* Round down to a sector */
+			nread -= nread % curlun->sector_size;
 		}
 		if (nread == 0) {
 			curlun->sense_data = SS_UNRECOVERED_READ_ERROR;
@@ -1179,7 +1179,7 @@ static int do_read_capacity(struct fsg_common *common, struct fsg_buffhd *bh)
 
 	put_unaligned_be32(curlun->num_sectors - 1, &buf[0]);
 						/* Max logical block */
-	put_unaligned_be32(512, &buf[4]);	/* Block length */
+	put_unaligned_be32(curlun->sector_size, &buf[4]); /* Block length */
 	return 8;
 }
 
@@ -1364,7 +1364,7 @@ static int do_read_format_capacities(struct fsg_common *common,
 
 	put_unaligned_be32(curlun->num_sectors, &buf[0]);
 						/* Number of blocks */
-	put_unaligned_be32(512, &buf[4]);	/* Block length */
+	put_unaligned_be32(curlun->sector_size, &buf[4]); /* Block length */
 	buf[4] = 0x02;				/* Current capacity */
 	return 12;
 }
@@ -1784,6 +1784,8 @@ static int do_scsi_command(struct fsg_common *common)
 	int			i;
 	static char		unknown[16];
 	struct fsg_lun		*curlun = &common->luns[common->lun];
+	unsigned int		sector_size = common->lun < common->nluns ?
+				      curlun->sector_size : SECTOR_SIZE;
 
 	dump_cdb(common);
 
@@ -1859,7 +1861,8 @@ static int do_scsi_command(struct fsg_common *common)
 
 	case SC_READ_6:
 		i = common->cmnd[4];
-		common->data_size_from_cmnd = (i == 0 ? 256 : i) << 9;
+		common->data_size_from_cmnd =
+			(i == 0 ? 256 : i) * sector_size;
 		reply = check_command(common, 6, DATA_DIR_TO_HOST,
 				      (7<<1) | (1<<4), 1,
 				      "READ(6)");
@@ -1869,7 +1872,7 @@ static int do_scsi_command(struct fsg_common *common)
 
 	case SC_READ_10:
 		common->data_size_from_cmnd =
-				get_unaligned_be16(&common->cmnd[7]) << 9;
+			get_unaligned_be16(&common->cmnd[7]) * sector_size;
 		reply = check_command(common, 10, DATA_DIR_TO_HOST,
 				      (1<<1) | (0xf<<2) | (3<<7), 1,
 				      "READ(10)");
@@ -1879,7 +1882,7 @@ static int do_scsi_command(struct fsg_common *common)
 
 	case SC_READ_12:
 		common->data_size_from_cmnd =
-				get_unaligned_be32(&common->cmnd[6]) << 9;
+			get_unaligned_be32(&common->cmnd[6]) * sector_size;
 		reply = check_command(common, 12, DATA_DIR_TO_HOST,
 				      (1<<1) | (0xf<<2) | (0xf<<6), 1,
 				      "READ(12)");
@@ -1977,7 +1980,8 @@ static int do_scsi_command(struct fsg_common *common)
 
 	case SC_WRITE_6:
 		i = common->cmnd[4];
-		common->data_size_from_cmnd = (i == 0 ? 256 : i) << 9;
+		common->data_size_from_cmnd =
+			(i == 0 ? 256 : i) * sector_size;
 		reply = check_command(common, 6, DATA_DIR_FROM_HOST,
 				      (7<<1) | (1<<4), 1,
 				      "WRITE(6)");
@@ -1987,7 +1991,7 @@ static int do_scsi_command(struct fsg_common *common)
 
 	case SC_WRITE_10:
 		common->data_size_from_cmnd =
-				get_unaligned_be16(&common->cmnd[7]) << 9;
+			get_unaligned_be16(&common->cmnd[7]) * sector_size;
 		reply = check_command(common, 10, DATA_DIR_FROM_HOST,
 				      (1<<1) | (0xf<<2) | (3<<7), 1,
 				      "WRITE(10)");
@@ -1997,7 +2001,7 @@ static int do_scsi_command(struct fsg_common *common)
 
 	case SC_WRITE_12:
 		common->data_size_from_cmnd =
-				get_unaligned_be32(&common->cmnd[6]) << 9;
+			get_unaligned_be32(&common->cmnd[6]) * sector_size;
 		reply = check_command(common, 12, DATA_DIR_FROM_HOST,
 				      (1<<1) | (0xf<<2) | (0xf<<6), 1,
 				      "WRITE(12)");
@@ -2491,7 +2495,8 @@ static struct fsg_common *fsg_common_init(struct fsg_common *common,
 	for (i = 0; i < nluns; i++) {
 		common->luns[i].removable = 1;
 
-		rc = fsg_lun_open(&common->luns[i], ums[i].num_sectors, "");
+		rc = fsg_lun_open(&common->luns[i], ums[i].num_sectors,
+				  ums[i].sector_size, "");
 		if (rc)
 			goto error_luns;
 	}
