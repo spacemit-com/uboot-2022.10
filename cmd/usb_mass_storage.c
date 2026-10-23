@@ -14,10 +14,12 @@
 #include <g_dnl.h>
 #include <malloc.h>
 #include <part.h>
+#include <scsi.h>
 #include <usb.h>
 #include <usb_mass_storage.h>
 #include <watchdog.h>
 #include <linux/delay.h>
+#include <linux/log2.h>
 
 static int ums_read_sector(struct ums *ums_dev,
 			   ulong start, lbaint_t blkcnt, void *buf)
@@ -87,9 +89,12 @@ static int ums_init(const char *devtype, const char *devnums_part_str)
 		if (!strchr(devnum_part_str, ':'))
 			partnum = 0;
 
-		/* f_mass_storage.c assumes SECTOR_SIZE sectors */
-		if (block_dev->blksz != SECTOR_SIZE)
+		if (block_dev->blksz < SECTOR_SIZE || block_dev->blksz > 4096 ||
+		    !is_power_of_2(block_dev->blksz)) {
+			printf("UMS: unsupported block size %lu for %s %s\n",
+			       block_dev->blksz, devtype, devnum_part_str);
 			goto cleanup;
+		}
 
 		ums_new = realloc(ums, (ums_count + 1) * sizeof(*ums));
 		if (!ums_new)
@@ -107,6 +112,7 @@ static int ums_init(const char *devtype, const char *devnums_part_str)
 
 		ums[ums_count].read_sector = ums_read_sector;
 		ums[ums_count].write_sector = ums_write_sector;
+		ums[ums_count].sector_size = block_dev->blksz;
 
 		name = malloc(UMS_NAME_LEN);
 		if (!name)
@@ -159,8 +165,10 @@ static int do_usb_mass_storage(struct cmd_tbl *cmdtp, int flag,
 	}
 
 	rc = ums_init(devtype, devnum);
-	if (rc < 0)
+	if (rc < 0) {
+		printf("UMS: cannot find %s device %s\n", devtype, devnum);
 		return CMD_RET_FAILURE;
+	}
 
 	controller_index = (unsigned int)(simple_strtoul(
 				usb_controller,	NULL, 0));

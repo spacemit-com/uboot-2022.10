@@ -277,6 +277,7 @@ struct device_attribute { int i; };
 struct fsg_lun {
 	loff_t		file_length;
 	loff_t		num_sectors;
+	unsigned int	sector_size;
 
 	unsigned int	initially_ro:1;
 	unsigned int	ro:1;
@@ -566,7 +567,7 @@ static struct usb_gadget_strings	fsg_stringtab = {
  */
 
 static int fsg_lun_open(struct fsg_lun *curlun, unsigned int num_sectors,
-			const char *filename)
+			unsigned int sector_size, const char *filename)
 {
 	int				ro;
 
@@ -574,8 +575,9 @@ static int fsg_lun_open(struct fsg_lun *curlun, unsigned int num_sectors,
 	ro = curlun->initially_ro;
 
 	curlun->ro = ro;
-	curlun->file_length = num_sectors << 9;
+	curlun->file_length = (loff_t)num_sectors * sector_size;
 	curlun->num_sectors = num_sectors;
+	curlun->sector_size = sector_size;
 	debug("open backing file: %s\n", filename);
 
 	return 0;
